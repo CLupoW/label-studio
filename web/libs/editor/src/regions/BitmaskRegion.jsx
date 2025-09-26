@@ -20,6 +20,7 @@ import { generateMultiShapeOutline } from "./BitmaskRegion/contour";
 import { observe } from "mobx";
 import { LabelOnMask } from "../components/ImageView/LabelOnRegion";
 
+
 /**
  * Bitmask masking region
  */
@@ -176,16 +177,24 @@ const Model = types
 
           image.src = self.imageDataURL;
 
-          try {
-            await image.decode();
+          // Fallback onload
+          image.onload = () => {
             context.canvas.width = image.naturalWidth;
             context.canvas.height = image.naturalHeight;
             bitmask.width = image.naturalWidth;
             bitmask.height = image.naturalHeight;
-
             context.drawImage(image, 0, 0);
-
             self.finalizeRegion();
+          };
+
+          image.onerror = (err) => {
+            console.error("Image load error", err);
+          };
+
+          try {
+            await image.decode(); // use decode() first
+            image.onload(); // on success of decode() onload() get called manually
+
           } catch (err) {
             console.log(err);
           }
